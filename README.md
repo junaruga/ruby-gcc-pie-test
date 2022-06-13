@@ -86,7 +86,7 @@ $ ls a.out
 a.out*
 ```
 
-The `gcc` command below doesn't work.
+The `gcc` command below doesn't work, because the [1] says "For predictable results, you must also specify the same set of options used for compilation (-fpie, -fPIE, or model suboptions) when you specify this linker option.".
 
 ```
 $ gcc -fcf-protection -Wl,-z,now -Wl,-pie conftest.c
@@ -96,3 +96,32 @@ collect2: error: ld returned 1 exit status
 $ echo $?
 1
 ```
+
+However the `gcc` command with the `-fpie`[2] below doesn't work, because the `crtbegin.o` is not position-independent code.
+
+```
+$ gcc -fcf-protection -fpie -Wl,-z,now -Wl,-pie conftest.c
+/bin/ld: /usr/lib/gcc/x86_64-redhat-linux/12/crtbegin.o: relocation R_X86_64_32 against hidden symbol `__TMC_END__' can not be used when making a PIE object
+collect2: error: ld returned 1 exit status
+
+$ echo $?
+1
+```
+
+The `gcc` command below works, because with -pie, the gcc links against the `crtbeginS.o`, which is position-independent.
+
+
+```
+$ gcc -fcf-protection -pie -Wl,-z,now conftest.c
+
+$ echo $?
+0
+
+$ ls a.out
+a.out*
+```
+
+## References
+
+* [1] gcc - link options - pie https://gcc.gnu.org/onlinedocs/gcc/Link-Options.html#index-pie
+* [2] gcc - options -fpie - https://gcc.gnu.org/onlinedocs/gcc/Code-Gen-Options.html#index-fpie
